@@ -1,0 +1,43 @@
+import pandas as pd
+from sklearn.cluster import KMeans #导入K均值聚类算法
+import matplotlib.pyplot as plt
+import openpyxl
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+datafile= 'c:/crm.xlsx' #航空原始数据,第一行为属性标签
+cleanedfile = 'c:/crm_cleaned.xlsx' #数据清洗后保存的文件
+data = pd.read_excel(datafile,encoding='utf-8') #读取原始数据，指定UTF-8编码
+
+# 将“年龄”、“性别”、“套餐”字段非空，同时是校园用户的数据提取出来。
+index1 = data['age'] != '未知'
+index2 = data['sex'] != '未知'
+index3 = data['scomb_msg_bxl'].isnull() == False
+index4 = data['is_school_user'] == '是'
+data = data[index1 & index2 & index3 & index4] #该规则是“或”
+
+# 将其他字段去掉，保留5个月的流量数据和入网时间
+data = data.drop(['age','sex','scomb_msg','scomb_msg_bxl','is_school_user'], axis = 1)
+
+data.to_excel(cleanedfile) #导出结果
+
+
+inputfile = 'c:/crm_cleaned.xlsx' #待聚类的数据文件
+outputfile = 'c:/crm_cluster.xlsx'
+k = 5                       #需要进行的聚类类别数
+iteration = 500             #聚类最大循环数
+
+#读取数据并进行聚类分析
+data_ana = pd.read_excel(inputfile) #读取数据
+
+#调用k-means算法，进行聚类分析
+clf = KMeans(n_clusters=3)   #需要进行的聚类类别数
+y_pred = clf.fit_predict(data_ana)
+
+cluster = pd.read_excel( 'c:/crm_cleaned.xlsx')
+
+cluster['class']= y_pred
+
+cluster.to_excel('c:/crm_cluster.xlsx')    # 新增一列为聚类的类别
+
+pd.plotting.andrews_curves(cluster, 'class')    # Andrews曲线展现多维数据
